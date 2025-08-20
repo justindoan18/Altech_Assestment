@@ -2,13 +2,17 @@ package org.hoangdm.altech_assessment.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hoangdm.altech_assessment.constants.ResponseConstant;
 import org.hoangdm.altech_assessment.exception.BusinessException;
+import org.hoangdm.altech_assessment.models.dtos.reponse.ResponseBaseSingle;
 import org.hoangdm.altech_assessment.models.entities.Cart;
 import org.hoangdm.altech_assessment.models.entities.CartItem;
 import org.hoangdm.altech_assessment.models.entities.Product;
 import org.hoangdm.altech_assessment.repository.CartRepository;
 import org.hoangdm.altech_assessment.repository.ProductRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -16,6 +20,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@MockitoBean
 public class CartService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
@@ -25,7 +30,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    public synchronized Cart addToCart(String cartId, String productId, int quantity) {
+    public synchronized ResponseBaseSingle<Cart> addToCart(String cartId, String productId, int quantity) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new BusinessException("Cart not found"));
 
@@ -53,11 +58,15 @@ public class CartService {
             item.setPriceAtPurchase(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
             cart.getItems().add(item);
 
-            return cartRepository.save(cart);
+            return new ResponseBaseSingle<>(
+                    HttpStatus.OK.value(),
+                    ResponseConstant.SUCCESS_MESSAGE,
+                    cartRepository.save(cart)
+            );
         }
     }
 
-    public synchronized Cart removeFromCart(String cartId, String productId) {
+    public synchronized ResponseBaseSingle<Cart> removeFromCart(String cartId, String productId) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
@@ -75,7 +84,11 @@ public class CartService {
             productRepository.save(product);
 
             cart.getItems().remove(toRemove);
-            return cartRepository.save(cart);
+            return new ResponseBaseSingle<>(
+                    HttpStatus.OK.value(),
+                    ResponseConstant.SUCCESS_MESSAGE,
+                    cartRepository.save(cart)
+            );
         }
     }
 
